@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import Block from './block';
 import Ball from './ball';
@@ -41,24 +41,24 @@ function App() {
   const [ball, setBall] = useState<Ball>(initBall());
   const [bar, setBar] = useState<Bar>(initBar());
 
-  const moveBar = (sign: 1 | -1) => {
+  const moveBar = useCallback((sign: 1 | -1) => {
     if (status === Status.Playing) {
       const nextBar = bar.copy();
       nextBar.vx = sign * barSpeed;
       setBar(nextBar);
     }
-  };
+  }, [status, bar]);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     if (status !== Status.Playing) {
       setStatus(Status.Playing);
       setBall(initBall());
       setBar(initBar());
       setBlocks(initBlocks());
     }
-  };
+  }, [status]);
 
-  const keyDown = (event: KeyboardEvent) => {
+  const keyDown = useCallback((event: KeyboardEvent) => {
     // console.log(event);
     // console.log(status);
     switch (event.key) {
@@ -72,8 +72,8 @@ function App() {
         moveBar(+1);
         break;
     }
-  };
-  const update = () => {
+  }, [moveBar, reset]);
+  const update = useCallback(() => {
     if (status !== Status.Playing)
       return;
     // ボール更新
@@ -94,16 +94,16 @@ function App() {
     } else if (ball.y > canvasHeight) {
       setStatus(Status.GameOver);
     }
-  };
+  }, [status, bar, ball, blocks]);
   useEffect(() => {
     const timeId = setInterval(update, 10);
     return () => clearInterval(timeId);
-  }, [status, bar, ball, blocks]);
+  }, [status, bar, ball, blocks, update]);
   useEffect(() => {
     document.addEventListener("keydown", keyDown);
     // ライフサイクル終了時に削除されるように
     return () => document.removeEventListener("keydown", keyDown);
-  }, [status, bar, ball, blocks]);
+  }, [status, bar, ball, blocks, keyDown]);
 
   const statusToMessages = () => {
     switch (status) {
